@@ -14,7 +14,7 @@ Add the following to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-    snowfall_or_anythings: ^0.0.3
+    snowfall_or_anythings: ^0.0.4
 ```
 
 Then run `flutter pub get` to install the package.
@@ -43,8 +43,11 @@ class SnowPage extends StatelessWidget {
   }
 }
 ```
-## Result
-https://github.com/user-attachments/assets/440c9275-88a7-409d-9f50-a3e0819c8705
+## Result 
+
+![Gravando 2024-11-24 010503](https://github.com/user-attachments/assets/5b430d66-a7c7-4b01-9cb1-653e60010169)
+
+
 
 
 
