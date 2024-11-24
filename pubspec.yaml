@@ -1,8 +1,8 @@
 name: snowfall_or_anythings
 description: "A Flutter package to create snowfall or any kind of falling widgets animations."
 version: 0.0.1
-homepage: https://github.com/username/snowfall_or_anythings
-repository: https://github.com/username/snowfall_or_anythings
+homepage: https://github.com/ValdirGiorgi/snowfall_or_anythings
+repository: https://github.com/ValdirGiorgi/snowfall_or_anythings
 
 environment:
   sdk: ^3.5.4
