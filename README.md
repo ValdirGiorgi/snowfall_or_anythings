@@ -14,7 +14,7 @@ Add the following to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-    snowfall_or_anythings: ^0.0.1
+    snowfall_or_anythings: ^0.0.3
 ```
 
 Then run `flutter pub get` to install the package.
