@@ -43,6 +43,10 @@ class SnowPage extends StatelessWidget {
   }
 }
 ```
+## Result
+https://github.com/user-attachments/assets/440c9275-88a7-409d-9f50-a3e0819c8705
+
+
 
 ### Customizing Particles
 
