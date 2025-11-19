@@ -1,9 +1,27 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-// Class representing a single particle
+/// Represents a single falling particle in the animation.
+///
+/// Each particle has position ([x], [y]), visual properties ([size], [color]),
+/// and movement characteristics ([speed], [sway]).
 class Particle {
-  double x, y, size, speed, sway;
+  /// Current horizontal position in logical pixels
+  double x;
+
+  /// Current vertical position in logical pixels
+  double y;
+
+  /// Size of the particle in logical pixels
+  double size;
+
+  /// Vertical falling speed
+  double speed;
+
+  /// Horizontal drift (swaying effect)
+  double sway;
+
+  /// Color of the particle
   final Color color;
 
   Particle({
@@ -15,16 +33,25 @@ class Particle {
     required this.color,
   });
 
-  // Factory constructor to create a particle with random properties
+  /// Factory constructor to create a particle with random properties.
+  ///
+  /// Parameters:
+  /// - [color]: The color of the particle
+  /// - [size]: The maximum size of the particle
+  /// - [speed]: The maximum speed of the particle
+  /// - [width]: The width of the canvas (defaults to 0, will be repositioned on first update)
+  /// - [height]: The height of the canvas (defaults to 0, will be repositioned on first update)
   factory Particle.random({
     required Color color,
     required double size,
     required double speed,
+    double width = 0,
+    double height = 0,
   }) {
     final random = Random();
     return Particle(
-      x: random.nextDouble() * 1000,
-      y: random.nextDouble() * 1000,
+      x: random.nextDouble() * (width > 0 ? width : 1000),
+      y: random.nextDouble() * (height > 0 ? height : 1000),
       size: random.nextDouble() * size + 2,
       speed: random.nextDouble() * speed + 1,
       sway: random.nextDouble() - 0.5,
@@ -32,7 +59,11 @@ class Particle {
     );
   }
 
-  // Update the particle's position
+  /// Updates the particle's position for the next frame.
+  ///
+  /// Moves the particle down by [speed] and horizontally by [sway].
+  /// When the particle falls below the bottom ([height]), it wraps around
+  /// to the top with a new random horizontal position.
   void update(double width, double height) {
     y += speed;
     x += sway;
@@ -43,7 +74,7 @@ class Particle {
   }
 }
 
-// Custom painter to draw particles
+/// Custom painter to draw particles as circles.
 class ParticlePainter extends CustomPainter {
   final List<Particle> particles;
 
@@ -54,7 +85,6 @@ class ParticlePainter extends CustomPainter {
     final paint = Paint();
 
     for (var particle in particles) {
-      particle.update(size.width, size.height);
       paint.color = particle.color;
       canvas.drawCircle(Offset(particle.x, particle.y), particle.size, paint);
     }
@@ -77,7 +107,6 @@ class CircularParticlePainter extends CustomPainter {
     final paint = Paint();
 
     for (var particle in particles) {
-      particle.update(size.width, size.height);
       paint.color = particle.color;
       canvas.drawCircle(Offset(particle.x, particle.y), particle.size, paint);
     }
@@ -89,7 +118,7 @@ class CircularParticlePainter extends CustomPainter {
   }
 }
 
-// Custom painter to draw snowflake particles
+/// Custom painter to draw snowflake particles
 class SnowflakeParticlePainter extends CustomPainter {
   final List<Particle> snowflakes;
   final Paint snowflakePaint;
@@ -102,11 +131,7 @@ class SnowflakeParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final width = size.width;
-    final height = size.height;
-
     for (var snowflake in snowflakes) {
-      snowflake.update(width, height);
       _renderSnowflake(canvas, snowflake, snowflakePaint);
     }
   }
