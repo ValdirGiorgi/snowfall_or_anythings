@@ -124,10 +124,11 @@ class SnowflakeParticlePainter extends CustomPainter {
   final Paint snowflakePaint;
 
   SnowflakeParticlePainter({required this.snowflakes})
-      : snowflakePaint = Paint()
-          ..color = const Color(0xFFDDDDDD)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
+    : snowflakePaint =
+          Paint()
+            ..color = const Color(0xFFDDDDDD)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5;
 
   @override
   void paint(Canvas canvas, Size size) {

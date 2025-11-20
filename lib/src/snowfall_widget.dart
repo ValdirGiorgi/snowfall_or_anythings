@@ -37,7 +37,7 @@ class SnowfallOrAnythings extends StatefulWidget {
 
   /// Optional custom painter for advanced particle rendering
   final CustomPainter Function({required List<Particle> particles})?
-      customPainter;
+  customPainter;
 
   /// Optional widget to use as particle (instead of painting)
   final Widget? particleWidget;
@@ -77,16 +77,16 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
       vsync: this,
       duration: Duration(milliseconds: widget.frameRateMs),
     )..addListener(() {
-        if (_particles != null) {
-          setState(() {
-            // Update the position of particles
-            final size = MediaQuery.of(context).size;
-            for (final particle in _particles!) {
-              particle.update(size.width, size.height);
-            }
-          });
-        }
-      });
+      if (_particles != null) {
+        setState(() {
+          // Update the position of particles
+          final size = MediaQuery.of(context).size;
+          for (final particle in _particles!) {
+            particle.update(size.width, size.height);
+          }
+        });
+      }
+    });
 
     // Start the animation
     _controller.repeat();
@@ -120,8 +120,12 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
         // Initialize particles with correct dimensions on first build
         if (_particles == null) {
           _initializeParticles(
-            constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.of(context).size.width,
-            constraints.maxHeight.isFinite ? constraints.maxHeight : MediaQuery.of(context).size.height,
+            constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : MediaQuery.of(context).size.width,
+            constraints.maxHeight.isFinite
+                ? constraints.maxHeight
+                : MediaQuery.of(context).size.height,
           );
         }
 
@@ -133,31 +137,34 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
         // If the user provided a widget for particles, use a Stack to position them
         if (widget.particleWidget != null) {
           return Stack(
-            children: _particles!.map((particle) {
-              return Positioned(
-                left: particle.x,
-                top: particle.y,
-                child: SizedBox(
-                  width: particle.size,
-                  height: particle.size,
-                  child: widget.particleWidget,
-                ),
-              );
-            }).toList(),
+            children:
+                _particles!.map((particle) {
+                  return Positioned(
+                    left: particle.x,
+                    top: particle.y,
+                    child: SizedBox(
+                      width: particle.size,
+                      height: particle.size,
+                      child: widget.particleWidget,
+                    ),
+                  );
+                }).toList(),
           );
         }
 
         // Otherwise, render with CustomPainter
-        final defaultPainter = widget.particleType == ParticleType.circular
-            ? CircularParticlePainter(particles: _particles!)
-            : SnowflakeParticlePainter(snowflakes: _particles!);
+        final defaultPainter =
+            widget.particleType == ParticleType.circular
+                ? CircularParticlePainter(particles: _particles!)
+                : SnowflakeParticlePainter(snowflakes: _particles!);
 
         return CustomPaint(
           size: Size.infinite,
           // Use customPainter if provided, otherwise use defaultPainter
-          painter: widget.customPainter != null
-              ? widget.customPainter!(particles: _particles!)
-              : defaultPainter,
+          painter:
+              widget.customPainter != null
+                  ? widget.customPainter!(particles: _particles!)
+                  : defaultPainter,
         );
       },
     );
