@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.6
+
+### Fixed
+- Applied dart format to all library files for pub.dev compliance
+- Updated example dependencies (flutter_lints to ^6.0.0)
+
 ## 0.0.5
 
 ### Added
