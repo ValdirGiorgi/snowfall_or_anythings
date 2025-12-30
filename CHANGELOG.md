@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.0.8
+## 0.0.7
 
 ### Added
 - New particle types for greater versatility:
@@ -19,20 +19,16 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Refactored `SnowflakeParticlePainter` to use particle color instead of hardcoded color
 - Updated particle type selection to use Dart 3 switch expression for cleaner code
+- Added `hashCode` and `==` operators to `Particle` class for proper comparison
+- Unified `ParticlePainter` and `CircularParticlePainter` - `ParticlePainter` now extends `CircularParticlePainter` to eliminate code duplication
 
 ### Improved
 - Enhanced `LeafParticlePainter` with more realistic leaf shape using cubic Bézier curves
 - Added central vein and side veins to leaf particles for natural appearance
 - Proportional vein thickness based on particle size
 
-## 0.0.7
-
 ### Performance
 - Optimized `shouldRepaint` in `CircularParticlePainter` and `SnowflakeParticlePainter` with deep comparison using hashCode, reducing unnecessary repaints
-
-### Changed
-- Added `hashCode` and `==` operators to `Particle` class for proper comparison
-- Unified `ParticlePainter` and `CircularParticlePainter` - `ParticlePainter` now extends `CircularParticlePainter` to eliminate code duplication
 
 ## 0.0.6
 

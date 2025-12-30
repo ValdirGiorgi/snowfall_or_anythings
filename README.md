@@ -34,7 +34,7 @@ Add the following to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-    snowfall_or_anythings: ^0.0.8
+    snowfall_or_anythings: ^0.0.7
 ```
 
 Then run:
