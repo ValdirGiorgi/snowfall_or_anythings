@@ -72,31 +72,23 @@ class Particle {
       x = Random().nextDouble() * width;
     }
   }
-}
-
-/// Custom painter to draw particles as circles.
-class ParticlePainter extends CustomPainter {
-  final List<Particle> particles;
-
-  ParticlePainter({required this.particles});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-
-    for (var particle in particles) {
-      paint.color = particle.color;
-      canvas.drawCircle(Offset(particle.x, particle.y), particle.size, paint);
-    }
-  }
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Particle &&
+          runtimeType == other.runtimeType &&
+          x == other.x &&
+          y == other.y &&
+          size == other.size &&
+          speed == other.speed &&
+          color == other.color;
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
-  }
+  int get hashCode => Object.hash(x, y, size, speed, color);
 }
 
-// Custom painter to draw circular particles
+/// Custom painter to draw circular particles.
 class CircularParticlePainter extends CustomPainter {
   final List<Particle> particles;
 
@@ -105,7 +97,6 @@ class CircularParticlePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint();
-
     for (var particle in particles) {
       paint.color = particle.color;
       canvas.drawCircle(Offset(particle.x, particle.y), particle.size, paint);
@@ -113,27 +104,37 @@ class CircularParticlePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
+  bool shouldRepaint(covariant CircularParticlePainter oldDelegate) {
+    if (oldDelegate.particles.length != particles.length) return true;
+    for (int i = 0; i < particles.length; i++) {
+      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
+        return true;
+      }
+    }
+    return false;
   }
+}
+
+/// Custom painter to draw particles as circles (alias for [CircularParticlePainter]).
+class ParticlePainter extends CircularParticlePainter {
+  ParticlePainter({required super.particles});
 }
 
 /// Custom painter to draw snowflake particles
 class SnowflakeParticlePainter extends CustomPainter {
   final List<Particle> snowflakes;
-  final Paint snowflakePaint;
 
-  SnowflakeParticlePainter({required this.snowflakes})
-    : snowflakePaint =
-          Paint()
-            ..color = const Color(0xFFDDDDDD)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.5;
+  SnowflakeParticlePainter({required this.snowflakes});
 
   @override
   void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
     for (var snowflake in snowflakes) {
-      _renderSnowflake(canvas, snowflake, snowflakePaint);
+      paint.color = snowflake.color;
+      _renderSnowflake(canvas, snowflake, paint);
     }
   }
 
@@ -173,7 +174,265 @@ class SnowflakeParticlePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    return true;
+  bool shouldRepaint(covariant SnowflakeParticlePainter oldDelegate) {
+    if (oldDelegate.snowflakes.length != snowflakes.length) return true;
+    for (int i = 0; i < snowflakes.length; i++) {
+      if (oldDelegate.snowflakes[i].hashCode != snowflakes[i].hashCode) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+/// Custom painter to draw star particles
+class StarParticlePainter extends CustomPainter {
+  final List<Particle> particles;
+
+  StarParticlePainter({required this.particles});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (var particle in particles) {
+      paint.color = particle.color;
+      _renderStar(canvas, particle, paint);
+    }
+  }
+
+  void _renderStar(Canvas canvas, Particle particle, Paint paint) {
+    final center = Offset(particle.x, particle.y);
+    final outerRadius = particle.size;
+    final innerRadius = particle.size * 0.4;
+    final path = Path();
+
+    for (int i = 0; i < 5; i++) {
+      final outerAngle = (i * 72 - 90) * pi / 180 + particle.sway;
+      final innerAngle = ((i * 72) + 36 - 90) * pi / 180 + particle.sway;
+
+      final outerPoint = Offset(
+        center.dx + outerRadius * cos(outerAngle),
+        center.dy + outerRadius * sin(outerAngle),
+      );
+      final innerPoint = Offset(
+        center.dx + innerRadius * cos(innerAngle),
+        center.dy + innerRadius * sin(innerAngle),
+      );
+
+      if (i == 0) {
+        path.moveTo(outerPoint.dx, outerPoint.dy);
+      } else {
+        path.lineTo(outerPoint.dx, outerPoint.dy);
+      }
+      path.lineTo(innerPoint.dx, innerPoint.dy);
+    }
+    path.close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant StarParticlePainter oldDelegate) {
+    if (oldDelegate.particles.length != particles.length) return true;
+    for (int i = 0; i < particles.length; i++) {
+      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+/// Custom painter to draw heart particles
+class HeartParticlePainter extends CustomPainter {
+  final List<Particle> particles;
+
+  HeartParticlePainter({required this.particles});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (var particle in particles) {
+      paint.color = particle.color;
+      _renderHeart(canvas, particle, paint);
+    }
+  }
+
+  void _renderHeart(Canvas canvas, Particle particle, Paint paint) {
+    final center = Offset(particle.x, particle.y);
+    final size = particle.size;
+    final path = Path();
+
+    // Heart shape using bezier curves
+    path.moveTo(center.dx, center.dy + size * 0.3);
+    
+    // Left curve
+    path.cubicTo(
+      center.dx - size, center.dy - size * 0.3,
+      center.dx - size * 0.5, center.dy - size,
+      center.dx, center.dy - size * 0.4,
+    );
+    
+    // Right curve
+    path.cubicTo(
+      center.dx + size * 0.5, center.dy - size,
+      center.dx + size, center.dy - size * 0.3,
+      center.dx, center.dy + size * 0.3,
+    );
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant HeartParticlePainter oldDelegate) {
+    if (oldDelegate.particles.length != particles.length) return true;
+    for (int i = 0; i < particles.length; i++) {
+      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+/// Custom painter to draw leaf particles
+class LeafParticlePainter extends CustomPainter {
+  final List<Particle> particles;
+
+  LeafParticlePainter({required this.particles});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (var particle in particles) {
+      paint.color = particle.color;
+      _renderLeaf(canvas, particle, paint);
+    }
+  }
+
+  void _renderLeaf(Canvas canvas, Particle particle, Paint paint) {
+    final center = Offset(particle.x, particle.y);
+    final size = particle.size;
+    
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(particle.sway * 2); // Rotate based on sway
+    
+    final path = Path();
+    
+    // Realistic leaf shape with pointed tip and curved sides
+    path.moveTo(0, -size); // Top point (tip of leaf)
+    
+    // Right side curve
+    path.cubicTo(
+      size * 0.5, -size * 0.7,  // Control point 1
+      size * 0.6, -size * 0.2,  // Control point 2
+      size * 0.5, size * 0.2,   // End point (widest part)
+    );
+    path.cubicTo(
+      size * 0.4, size * 0.5,   // Control point 1
+      size * 0.2, size * 0.8,   // Control point 2
+      0, size,                   // Bottom point (stem)
+    );
+    
+    // Left side curve (mirror)
+    path.cubicTo(
+      -size * 0.2, size * 0.8,  // Control point 1
+      -size * 0.4, size * 0.5,  // Control point 2
+      -size * 0.5, size * 0.2,  // End point (widest part)
+    );
+    path.cubicTo(
+      -size * 0.6, -size * 0.2, // Control point 1
+      -size * 0.5, -size * 0.7, // Control point 2
+      0, -size,                  // Back to top
+    );
+    
+    path.close();
+    canvas.drawPath(path, paint);
+    
+    // Draw central vein
+    final veinPaint = Paint()
+      ..color = particle.color.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size * 0.08
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(0, -size * 0.8), Offset(0, size * 0.7), veinPaint);
+    
+    // Draw side veins
+    final sideVeinPaint = Paint()
+      ..color = particle.color.withValues(alpha: 0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = size * 0.05
+      ..strokeCap = StrokeCap.round;
+    
+    // Right side veins
+    canvas.drawLine(Offset(0, -size * 0.4), Offset(size * 0.3, -size * 0.1), sideVeinPaint);
+    canvas.drawLine(Offset(0, size * 0.1), Offset(size * 0.35, size * 0.25), sideVeinPaint);
+    
+    // Left side veins
+    canvas.drawLine(Offset(0, -size * 0.4), Offset(-size * 0.3, -size * 0.1), sideVeinPaint);
+    canvas.drawLine(Offset(0, size * 0.1), Offset(-size * 0.35, size * 0.25), sideVeinPaint);
+    
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant LeafParticlePainter oldDelegate) {
+    if (oldDelegate.particles.length != particles.length) return true;
+    for (int i = 0; i < particles.length; i++) {
+      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+/// Custom painter to draw raindrop particles
+class RaindropParticlePainter extends CustomPainter {
+  final List<Particle> particles;
+
+  RaindropParticlePainter({required this.particles});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..style = PaintingStyle.fill;
+
+    for (var particle in particles) {
+      paint.color = particle.color;
+      _renderRaindrop(canvas, particle, paint);
+    }
+  }
+
+  void _renderRaindrop(Canvas canvas, Particle particle, Paint paint) {
+    final center = Offset(particle.x, particle.y);
+    final size = particle.size;
+    final path = Path();
+
+    // Teardrop/raindrop shape
+    path.moveTo(center.dx, center.dy - size);
+    path.quadraticBezierTo(
+      center.dx + size * 0.6, center.dy,
+      center.dx, center.dy + size * 0.5,
+    );
+    path.quadraticBezierTo(
+      center.dx - size * 0.6, center.dy,
+      center.dx, center.dy - size,
+    );
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant RaindropParticlePainter oldDelegate) {
+    if (oldDelegate.particles.length != particles.length) return true;
+    for (int i = 0; i < particles.length; i++) {
+      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
+        return true;
+      }
+    }
+    return false;
   }
 }

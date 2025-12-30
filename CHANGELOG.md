@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.8
+
+### Added
+- New particle types for greater versatility:
+  - `ParticleType.star` - 5-pointed star particles with rotation
+  - `ParticleType.heart` - Heart-shaped particles using Bézier curves
+  - `ParticleType.leaf` - Realistic leaf particles with central and side veins
+  - `ParticleType.raindrop` - Teardrop/raindrop-shaped particles
+- New painters: `StarParticlePainter`, `HeartParticlePainter`, `LeafParticlePainter`, `RaindropParticlePainter`
+- New example page demonstrating all particle types with color picker and size slider
+
+### Fixed
+- **Bug fix**: `particleColor` now works correctly for snowflake particles (was hardcoded to white)
+
+### Changed
+- Refactored `SnowflakeParticlePainter` to use particle color instead of hardcoded color
+- Updated particle type selection to use Dart 3 switch expression for cleaner code
+
+### Improved
+- Enhanced `LeafParticlePainter` with more realistic leaf shape using cubic Bézier curves
+- Added central vein and side veins to leaf particles for natural appearance
+- Proportional vein thickness based on particle size
+
+## 0.0.7
+
+### Performance
+- Optimized `shouldRepaint` in `CircularParticlePainter` and `SnowflakeParticlePainter` with deep comparison using hashCode, reducing unnecessary repaints
+
+### Changed
+- Added `hashCode` and `==` operators to `Particle` class for proper comparison
+- Unified `ParticlePainter` and `CircularParticlePainter` - `ParticlePainter` now extends `CircularParticlePainter` to eliminate code duplication
+
 ## 0.0.6
 
 ### Fixed

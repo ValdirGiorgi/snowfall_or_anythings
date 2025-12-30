@@ -8,7 +8,7 @@ A Flutter package to create beautiful snowfall or other particle effects in your
 
 ## Features
 
-- 🎨 Multiple particle types (circular, snowflake, or custom)
+- 🎨 Multiple particle types (circular, snowflake, star, heart, leaf, raindrop)
 - ⚡ High performance with optimized rendering
 - 🎮 Full control over animation parameters
 - 🔧 Highly customizable (colors, sizes, speeds, shapes)
@@ -17,13 +17,24 @@ A Flutter package to create beautiful snowfall or other particle effects in your
 - 🧩 Widget-based particles for maximum flexibility
 - ⏱️ Configurable frame rate for performance tuning
 
+## Particle Types
+
+| Type | Description | Best For |
+|------|-------------|----------|
+| ⚪ `circular` | Simple filled circles | Rain, bubbles, generic effects |
+| ❄️ `snowflake` | 6-branched snowflake with details | Winter/snow themes |
+| ⭐ `star` | 5-pointed stars with rotation | Night sky, magical effects |
+| ❤️ `heart` | Heart shapes using Bézier curves | Valentine's, love themes |
+| 🍂 `leaf` | Realistic leaves with veins | Autumn, nature themes |
+| 💧 `raindrop` | Teardrop shapes | Rain, water effects |
+
 ## Installation
 
 Add the following to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-    snowfall_or_anythings: ^0.0.6
+    snowfall_or_anythings: ^0.0.8
 ```
 
 Then run:
@@ -71,6 +82,62 @@ SnowfallOrAnythings(
   particleSpeed: 1.2,
   particleColor: Colors.blue,
   particleType: ParticleType.circular,
+)
+```
+
+### Star Particles
+
+Create a starry night effect:
+
+```dart
+SnowfallOrAnythings(
+  numberOfParticles: 100,
+  particleSize: 10.0,
+  particleSpeed: 0.8,
+  particleColor: Colors.yellow,
+  particleType: ParticleType.star,
+)
+```
+
+### Heart Particles
+
+Perfect for Valentine's Day or love-themed apps:
+
+```dart
+SnowfallOrAnythings(
+  numberOfParticles: 80,
+  particleSize: 12.0,
+  particleSpeed: 1.0,
+  particleColor: Colors.pink,
+  particleType: ParticleType.heart,
+)
+```
+
+### Leaf Particles
+
+Create an autumn falling leaves effect:
+
+```dart
+SnowfallOrAnythings(
+  numberOfParticles: 60,
+  particleSize: 15.0,
+  particleSpeed: 1.2,
+  particleColor: Colors.orange,
+  particleType: ParticleType.leaf,
+)
+```
+
+### Raindrop Particles
+
+Simulate rain with teardrop-shaped particles:
+
+```dart
+SnowfallOrAnythings(
+  numberOfParticles: 200,
+  particleSize: 8.0,
+  particleSpeed: 3.0,
+  particleColor: Colors.lightBlue,
+  particleType: ParticleType.raindrop,
 )
 ```
 
@@ -188,7 +255,7 @@ SnowfallOrAnythings(
 | `particleColor` | `Color` | `Colors.white` | Color of the particles (for built-in types) |
 | `particleSize` | `double` | `4.0` | Maximum size of particles in logical pixels |
 | `particleSpeed` | `double` | `1.0` | Maximum falling speed of particles |
-| `particleType` | `ParticleType` | `ParticleType.snowflake` | Type of particle: `circular` or `snowflake` |
+| `particleType` | `ParticleType` | `ParticleType.snowflake` | Type of particle (see ParticleType enum) |
 | `customPainter` | `Function?` | `null` | Custom painter for advanced particle rendering |
 | `particleWidget` | `Widget?` | `null` | Custom widget to use as particle |
 | `frameRateMs` | `int` | `16` | Frame duration in milliseconds (16ms ≈ 60 FPS) |
@@ -198,7 +265,11 @@ SnowfallOrAnythings(
 ```dart
 enum ParticleType {
   circular,   // Simple circular particles
-  snowflake,  // Detailed snowflake shapes
+  snowflake,  // Detailed snowflake shapes with branches
+  star,       // 5-pointed star particles
+  heart,      // Heart-shaped particles
+  leaf,       // Leaf particles with rotation
+  raindrop,   // Teardrop/raindrop shapes
 }
 ```
 

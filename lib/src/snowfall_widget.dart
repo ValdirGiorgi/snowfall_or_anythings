@@ -1,7 +1,26 @@
 import 'package:flutter/material.dart';
 import 'particle.dart';
 
-enum ParticleType { circular, snowflake }
+/// Types of particles available for rendering
+enum ParticleType {
+  /// Simple circular particles
+  circular,
+
+  /// Snowflake-shaped particles with branches
+  snowflake,
+
+  /// Star-shaped particles (5-pointed)
+  star,
+
+  /// Heart-shaped particles
+  heart,
+
+  /// Leaf-shaped particles that rotate
+  leaf,
+
+  /// Raindrop/teardrop-shaped particles
+  raindrop,
+}
 
 /// A widget that creates a snowfall or any kind of falling particle animation.
 ///
@@ -32,7 +51,7 @@ class SnowfallOrAnythings extends StatefulWidget {
   /// Maximum falling speed of particles
   final double particleSpeed;
 
-  /// Type of particle to render (circular or snowflake)
+  /// Type of particle to render (circular, snowflake, star, heart, leaf, or raindrop)
   final ParticleType particleType;
 
   /// Optional custom painter for advanced particle rendering
@@ -153,10 +172,14 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
         }
 
         // Otherwise, render with CustomPainter
-        final defaultPainter =
-            widget.particleType == ParticleType.circular
-                ? CircularParticlePainter(particles: _particles!)
-                : SnowflakeParticlePainter(snowflakes: _particles!);
+        final defaultPainter = switch (widget.particleType) {
+          ParticleType.circular => CircularParticlePainter(particles: _particles!),
+          ParticleType.snowflake => SnowflakeParticlePainter(snowflakes: _particles!),
+          ParticleType.star => StarParticlePainter(particles: _particles!),
+          ParticleType.heart => HeartParticlePainter(particles: _particles!),
+          ParticleType.leaf => LeafParticlePainter(particles: _particles!),
+          ParticleType.raindrop => RaindropParticlePainter(particles: _particles!),
+        };
 
         return CustomPaint(
           size: Size.infinite,

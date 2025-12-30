@@ -1,5 +1,6 @@
 import 'package:example/pages/custom_paint_page.dart';
 import 'package:example/pages/frame_rate_page.dart';
+import 'package:example/pages/particle_types_page.dart';
 import 'package:example/pages/snow_page.dart';
 import 'package:example/pages/widget_page.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +45,18 @@ class MainPage extends StatelessWidget {
                 );
               },
               child: const Text('Snowfall Demo'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ParticleTypesPage(),
+                  ),
+                );
+              },
+              child: const Text('Particle Types Demo'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
