@@ -173,12 +173,18 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
 
         // Otherwise, render with CustomPainter
         final defaultPainter = switch (widget.particleType) {
-          ParticleType.circular => CircularParticlePainter(particles: _particles!),
-          ParticleType.snowflake => SnowflakeParticlePainter(snowflakes: _particles!),
+          ParticleType.circular => CircularParticlePainter(
+            particles: _particles!,
+          ),
+          ParticleType.snowflake => SnowflakeParticlePainter(
+            snowflakes: _particles!,
+          ),
           ParticleType.star => StarParticlePainter(particles: _particles!),
           ParticleType.heart => HeartParticlePainter(particles: _particles!),
           ParticleType.leaf => LeafParticlePainter(particles: _particles!),
-          ParticleType.raindrop => RaindropParticlePainter(particles: _particles!),
+          ParticleType.raindrop => RaindropParticlePainter(
+            particles: _particles!,
+          ),
         };
 
         return CustomPaint(

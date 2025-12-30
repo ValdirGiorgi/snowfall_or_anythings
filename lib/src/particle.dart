@@ -128,9 +128,10 @@ class SnowflakeParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+    final paint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
 
     for (var snowflake in snowflakes) {
       paint.color = snowflake.color;
@@ -266,19 +267,25 @@ class HeartParticlePainter extends CustomPainter {
 
     // Heart shape using bezier curves
     path.moveTo(center.dx, center.dy + size * 0.3);
-    
+
     // Left curve
     path.cubicTo(
-      center.dx - size, center.dy - size * 0.3,
-      center.dx - size * 0.5, center.dy - size,
-      center.dx, center.dy - size * 0.4,
+      center.dx - size,
+      center.dy - size * 0.3,
+      center.dx - size * 0.5,
+      center.dy - size,
+      center.dx,
+      center.dy - size * 0.4,
     );
-    
+
     // Right curve
     path.cubicTo(
-      center.dx + size * 0.5, center.dy - size,
-      center.dx + size, center.dy - size * 0.3,
-      center.dx, center.dy + size * 0.3,
+      center.dx + size * 0.5,
+      center.dy - size,
+      center.dx + size,
+      center.dy - size * 0.3,
+      center.dx,
+      center.dy + size * 0.3,
     );
 
     canvas.drawPath(path, paint);
@@ -315,66 +322,96 @@ class LeafParticlePainter extends CustomPainter {
   void _renderLeaf(Canvas canvas, Particle particle, Paint paint) {
     final center = Offset(particle.x, particle.y);
     final size = particle.size;
-    
+
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(particle.sway * 2); // Rotate based on sway
-    
+
     final path = Path();
-    
+
     // Realistic leaf shape with pointed tip and curved sides
     path.moveTo(0, -size); // Top point (tip of leaf)
-    
+
     // Right side curve
     path.cubicTo(
-      size * 0.5, -size * 0.7,  // Control point 1
-      size * 0.6, -size * 0.2,  // Control point 2
-      size * 0.5, size * 0.2,   // End point (widest part)
+      size * 0.5,
+      -size * 0.7, // Control point 1
+      size * 0.6,
+      -size * 0.2, // Control point 2
+      size * 0.5,
+      size * 0.2, // End point (widest part)
     );
     path.cubicTo(
-      size * 0.4, size * 0.5,   // Control point 1
-      size * 0.2, size * 0.8,   // Control point 2
-      0, size,                   // Bottom point (stem)
+      size * 0.4,
+      size * 0.5, // Control point 1
+      size * 0.2,
+      size * 0.8, // Control point 2
+      0,
+      size, // Bottom point (stem)
     );
-    
+
     // Left side curve (mirror)
     path.cubicTo(
-      -size * 0.2, size * 0.8,  // Control point 1
-      -size * 0.4, size * 0.5,  // Control point 2
-      -size * 0.5, size * 0.2,  // End point (widest part)
+      -size * 0.2,
+      size * 0.8, // Control point 1
+      -size * 0.4,
+      size * 0.5, // Control point 2
+      -size * 0.5,
+      size * 0.2, // End point (widest part)
     );
     path.cubicTo(
-      -size * 0.6, -size * 0.2, // Control point 1
-      -size * 0.5, -size * 0.7, // Control point 2
-      0, -size,                  // Back to top
+      -size * 0.6,
+      -size * 0.2, // Control point 1
+      -size * 0.5,
+      -size * 0.7, // Control point 2
+      0,
+      -size, // Back to top
     );
-    
+
     path.close();
     canvas.drawPath(path, paint);
-    
+
     // Draw central vein
-    final veinPaint = Paint()
-      ..color = particle.color.withValues(alpha: 0.4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size * 0.08
-      ..strokeCap = StrokeCap.round;
+    final veinPaint =
+        Paint()
+          ..color = particle.color.withValues(alpha: 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = size * 0.08
+          ..strokeCap = StrokeCap.round;
     canvas.drawLine(Offset(0, -size * 0.8), Offset(0, size * 0.7), veinPaint);
-    
+
     // Draw side veins
-    final sideVeinPaint = Paint()
-      ..color = particle.color.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size * 0.05
-      ..strokeCap = StrokeCap.round;
-    
+    final sideVeinPaint =
+        Paint()
+          ..color = particle.color.withValues(alpha: 0.3)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = size * 0.05
+          ..strokeCap = StrokeCap.round;
+
     // Right side veins
-    canvas.drawLine(Offset(0, -size * 0.4), Offset(size * 0.3, -size * 0.1), sideVeinPaint);
-    canvas.drawLine(Offset(0, size * 0.1), Offset(size * 0.35, size * 0.25), sideVeinPaint);
-    
+    canvas.drawLine(
+      Offset(0, -size * 0.4),
+      Offset(size * 0.3, -size * 0.1),
+      sideVeinPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size * 0.1),
+      Offset(size * 0.35, size * 0.25),
+      sideVeinPaint,
+    );
+
     // Left side veins
-    canvas.drawLine(Offset(0, -size * 0.4), Offset(-size * 0.3, -size * 0.1), sideVeinPaint);
-    canvas.drawLine(Offset(0, size * 0.1), Offset(-size * 0.35, size * 0.25), sideVeinPaint);
-    
+    canvas.drawLine(
+      Offset(0, -size * 0.4),
+      Offset(-size * 0.3, -size * 0.1),
+      sideVeinPaint,
+    );
+    canvas.drawLine(
+      Offset(0, size * 0.1),
+      Offset(-size * 0.35, size * 0.25),
+      sideVeinPaint,
+    );
+
     canvas.restore();
   }
 
@@ -414,12 +451,16 @@ class RaindropParticlePainter extends CustomPainter {
     // Teardrop/raindrop shape
     path.moveTo(center.dx, center.dy - size);
     path.quadraticBezierTo(
-      center.dx + size * 0.6, center.dy,
-      center.dx, center.dy + size * 0.5,
+      center.dx + size * 0.6,
+      center.dy,
+      center.dx,
+      center.dy + size * 0.5,
     );
     path.quadraticBezierTo(
-      center.dx - size * 0.6, center.dy,
-      center.dx, center.dy - size,
+      center.dx - size * 0.6,
+      center.dy,
+      center.dx,
+      center.dy - size,
     );
 
     canvas.drawPath(path, paint);
