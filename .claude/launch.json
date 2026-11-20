@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "example-web",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8686", "--bind", "127.0.0.1", "--directory", "/mnt/Projetos/Projetos/pub.dev/snowfall_or_anythings/example/build/web"],
+      "port": 8686
+    }
+  ]
+}

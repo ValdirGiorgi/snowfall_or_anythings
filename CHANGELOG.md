@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## 0.0.8
 
 ### Added
+- `particleVariants` parameter and `ParticleVariant` class: up to 5 kinds of particles falling together (built-in shapes and/or widgets), each with its own share (`weight`), color, size and speed
+- `Particle.variantIndex` so custom painters can draw each variant differently
+- `SnowfallOrAnythings.maxParticleVariants` constant
+- Example app rebuilt: gallery with live previews, playground with every parameter, Christmas mix with percentages, seasonal presets, overlay, tappable widget particles and a custom painter using `variantIndex`
+- Example app also runs as a live web demo at https://snowfall.valdir.dev.br, with an introduction, About page and a link to the article on how the package was built
+- README rewritten with GIFs, recipes (snow, hearts, leaves, rain, stars, confetti) and API tables
 - `maxFps` parameter to cap the animation frame rate (`null` follows the display refresh rate)
 - `Particle.advance(width, height, delta)` for time-based movement (`update` still works and calls it with `delta = 1.0`)
 - Optional `repaint` parameter on all built-in painters, so they repaint without being recreated on every frame
@@ -16,6 +22,8 @@ All notable changes to this project will be documented in this file.
 - Particles now wrap inside the widget area instead of the whole screen size
 - Changing parameters at runtime (`numberOfParticles`, `particleColor`, `particleSize`, `particleSpeed`) is now applied without needing a `Key`
 - Painter modes no longer block taps on widgets below the animation
+- Particles are no longer created while the widget has an empty size (first frame on Android), which made them start bunched together
+- Particles drawn by painters are now clipped to the widget area (they could be drawn over neighboring widgets)
 - Particles enter from above the top edge and leave fully through the bottom edge (no more popping), and wrap horizontally when drifting out of the sides
 - `shouldRepaint` in built-in painters compared the same mutable objects and never detected changes; repaints are now driven by the `repaint` listenable
 - Minimum Flutter version set to 3.29.0 (`Color.withValues` was already required)

@@ -30,9 +30,7 @@ class _FrameRatePageState extends State<FrameRatePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Frame Rate Control Demo'),
-      ),
+      appBar: AppBar(title: const Text('Frame Rate Control Demo')),
       body: Column(
         children: [
           // Control Panel
@@ -106,10 +104,7 @@ class _FrameRatePageState extends State<FrameRatePage> {
                 const SizedBox(height: 8),
                 Text(
                   'maxFps: $_currentFPS',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
-                  ),
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
                 ),
                 const SizedBox(height: 16),
                 const Text(

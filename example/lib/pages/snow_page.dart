@@ -7,9 +7,7 @@ class SnowPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Snowfall Demo'),
-      ),
+      appBar: AppBar(title: const Text('Snowfall Demo')),
       body: const SnowfallOrAnythings(
         numberOfParticles: 200,
         particleSize: 4.0,

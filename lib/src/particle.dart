@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
+import 'particle_variant.dart' show ParticleVariant;
+
 /// Represents a single falling particle in the animation.
 ///
 /// Each particle has position ([x], [y]), visual properties ([size], [color]),
@@ -24,6 +26,12 @@ class Particle {
   /// Color of the particle
   final Color color;
 
+  /// Index of the [ParticleVariant] this particle belongs to, when
+  /// `SnowfallOrAnythings.particleVariants` is used. Always `0` otherwise.
+  ///
+  /// Useful in a custom painter to draw each variant differently.
+  final int variantIndex;
+
   /// Shared random generator, avoids allocating a new [Random] per particle.
   static final Random _random = Random();
 
@@ -34,6 +42,7 @@ class Particle {
     required this.speed,
     required this.sway,
     required this.color,
+    this.variantIndex = 0,
   });
 
   /// Factory constructor to create a particle with random properties.
@@ -44,12 +53,14 @@ class Particle {
   /// - [speed]: The maximum speed of the particle
   /// - [width]: The width of the canvas (defaults to 0, will be repositioned on first update)
   /// - [height]: The height of the canvas (defaults to 0, will be repositioned on first update)
+  /// - [variantIndex]: See [Particle.variantIndex]
   factory Particle.random({
     required Color color,
     required double size,
     required double speed,
     double width = 0,
     double height = 0,
+    int variantIndex = 0,
   }) {
     final random = _random;
     return Particle(
@@ -59,6 +70,7 @@ class Particle {
       speed: random.nextDouble() * speed + 1,
       sway: random.nextDouble() - 0.5,
       color: color,
+      variantIndex: variantIndex,
     );
   }
 

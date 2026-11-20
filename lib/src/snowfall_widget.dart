@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'particle.dart';
+import 'particle_variant.dart';
 
 /// Types of particles available for rendering
 enum ParticleType {
@@ -97,6 +98,22 @@ class SnowfallOrAnythings extends StatefulWidget {
   /// affected, only the smoothness.
   final double? maxFps;
 
+  /// Mix of up to [maxParticleVariants] kinds of particles falling together,
+  /// each with its own share of [numberOfParticles].
+  ///
+  /// When set (and not empty), [particleType] and [particleWidget] are only
+  /// used as fallbacks for variants without `type` or `widget`. If
+  /// [customPainter] is also set, it draws all particles; use
+  /// [Particle.variantIndex] to tell them apart.
+  ///
+  /// The particles are split exactly according to [ParticleVariant.weight]:
+  /// with 100 particles and weights `60, 30, 10` there will be 60, 30 and 10
+  /// particles of each variant.
+  final List<ParticleVariant>? particleVariants;
+
+  /// Maximum number of entries used from [particleVariants].
+  static const int maxParticleVariants = 5;
+
   const SnowfallOrAnythings({
     super.key,
     this.numberOfParticles = 200,
@@ -112,6 +129,7 @@ class SnowfallOrAnythings extends StatefulWidget {
     )
     this.frameRateMs = 16,
     this.maxFps,
+    this.particleVariants,
   });
 
   @override
@@ -129,6 +147,9 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
   late final Ticker _ticker;
   final _FrameNotifier _frame = _FrameNotifier();
   List<Particle>? _particles;
+
+  /// Particles of each variant, sharing the instances of [_particles].
+  List<List<Particle>> _variantParticles = const [];
   Size _areaSize = Size.zero;
   Duration _lastStep = Duration.zero;
 
@@ -144,7 +165,11 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
     if (oldWidget.numberOfParticles != widget.numberOfParticles ||
         oldWidget.particleColor != widget.particleColor ||
         oldWidget.particleSize != widget.particleSize ||
-        oldWidget.particleSpeed != widget.particleSpeed) {
+        oldWidget.particleSpeed != widget.particleSpeed ||
+        !_sameVariantLayout(
+          oldWidget.particleVariants,
+          widget.particleVariants,
+        )) {
       // Regenerated in the next build with the current area size.
       _particles = null;
     }
@@ -155,6 +180,57 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
     _ticker.dispose();
     _frame.dispose();
     super.dispose();
+  }
+
+  /// Active variants, or `null` when [SnowfallOrAnythings.particleVariants]
+  /// is not used.
+  List<ParticleVariant>? get _variants {
+    final variants = widget.particleVariants;
+    if (variants == null || variants.isEmpty) return null;
+    assert(
+      variants.length <= SnowfallOrAnythings.maxParticleVariants,
+      'particleVariants supports up to '
+      '${SnowfallOrAnythings.maxParticleVariants} entries, '
+      'got ${variants.length}. Extra entries are ignored.',
+    );
+    return variants.length > SnowfallOrAnythings.maxParticleVariants
+        ? variants.sublist(0, SnowfallOrAnythings.maxParticleVariants)
+        : variants;
+  }
+
+  /// Widget instances may be recreated on every parent build; only a change
+  /// in the particle mix requires regenerating the particles.
+  static bool _sameVariantLayout(
+    List<ParticleVariant>? a,
+    List<ParticleVariant>? b,
+  ) {
+    if (identical(a, b)) return true;
+    final aEmpty = a == null || a.isEmpty;
+    final bEmpty = b == null || b.isEmpty;
+    if (aEmpty || bEmpty) return aEmpty == bEmpty;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (!a[i].hasSameLayout(b[i])) return false;
+    }
+    return true;
+  }
+
+  /// Splits [total] proportionally to [weights] using the largest remainder
+  /// method, so the counts always add up to [total].
+  static List<int> _distribute(int total, List<double> weights) {
+    final sum = weights.fold<double>(0, (a, b) => a + b);
+    if (total <= 0 || sum <= 0) return List.filled(weights.length, 0);
+    final exact = [for (final w in weights) total * w / sum];
+    final counts = [for (final e in exact) e.floor()];
+    var remaining = total - counts.fold<int>(0, (a, b) => a + b);
+    final order = List.generate(weights.length, (i) => i)
+      ..sort((a, b) => (exact[b] - counts[b]).compareTo(exact[a] - counts[a]));
+    for (final i in order) {
+      if (remaining <= 0) break;
+      counts[i]++;
+      remaining--;
+    }
+    return counts;
   }
 
   double? get _effectiveMaxFps {
@@ -193,6 +269,29 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
   }
 
   List<Particle> _createParticles(Size size) {
+    final variants = _variants;
+    if (variants != null) {
+      final counts = _distribute(widget.numberOfParticles, [
+        for (final v in variants) v.weight,
+      ]);
+      _variantParticles = [
+        for (int i = 0; i < variants.length; i++)
+          List.generate(
+            counts[i],
+            (_) => Particle.random(
+              color: variants[i].color ?? widget.particleColor,
+              size: variants[i].size ?? widget.particleSize,
+              speed: variants[i].speed ?? widget.particleSpeed,
+              width: size.width,
+              height: size.height,
+              variantIndex: i,
+            ),
+          ),
+      ];
+      return [for (final list in _variantParticles) ...list];
+    }
+
+    _variantParticles = const [];
     return List.generate(
       widget.numberOfParticles,
       (_) => Particle.random(
@@ -224,8 +323,11 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
     _areaSize = size;
   }
 
-  CustomPainter _builtInPainter(List<Particle> particles) {
-    return switch (widget.particleType) {
+  CustomPainter _builtInPainter(
+    List<Particle> particles, [
+    ParticleType? type,
+  ]) {
+    return switch (type ?? widget.particleType) {
       ParticleType.circular => CircularParticlePainter(
         particles: particles,
         repaint: _frame,
@@ -267,16 +369,25 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
               : screenSize.height,
         );
         _updateAreaSize(size);
+        // The first layout can have an empty size (e.g. Android startup):
+        // wait for the real area instead of creating particles for it.
+        if (size.isEmpty) return const SizedBox.shrink();
         final particles = _particles ??= _createParticles(size);
 
         if (particles.isEmpty) {
           return const SizedBox.shrink();
         }
 
+        final customPainter = widget.customPainter;
+        final variants = _variants;
+        if (variants != null && customPainter == null) {
+          return _buildVariants(size, variants);
+        }
+
         // Widget particles: positioned at paint time with a Flow, so no
         // rebuild or relayout happens on each frame.
         final particleWidget = widget.particleWidget;
-        if (particleWidget != null) {
+        if (particleWidget != null && variants == null) {
           return RepaintBoundary(
             child: SizedBox.fromSize(
               size: size,
@@ -291,7 +402,6 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
           );
         }
 
-        final customPainter = widget.customPainter;
         final Widget painted;
         if (customPainter != null) {
           // The callback is invoked on every frame, as in previous versions.
@@ -313,9 +423,93 @@ class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
           );
         }
 
-        return IgnorePointer(child: RepaintBoundary(child: painted));
+        // Painters don't clip by themselves: keep particles inside the area.
+        return IgnorePointer(
+          child: RepaintBoundary(child: ClipRect(child: painted)),
+        );
       },
     );
+  }
+
+  /// Shapes are drawn in a single [CustomPaint] (one painter per variant)
+  /// and widgets are positioned in a [Flow] on top of them.
+  Widget _buildVariants(Size size, List<ParticleVariant> variants) {
+    final painters = <CustomPainter>[];
+    final widgetParticles = <Particle>[];
+    final widgetChildren = <Widget>[];
+
+    for (int i = 0; i < variants.length && i < _variantParticles.length; i++) {
+      final particles = _variantParticles[i];
+      if (particles.isEmpty) continue;
+      final variant = variants[i];
+      final child =
+          variant.widget ??
+          (variant.type == null ? widget.particleWidget : null);
+      if (child != null) {
+        widgetParticles.addAll(particles);
+        widgetChildren.addAll(List.filled(particles.length, child));
+      } else {
+        painters.add(_builtInPainter(particles, variant.type));
+      }
+    }
+
+    return SizedBox.fromSize(
+      size: size,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (painters.isNotEmpty)
+            IgnorePointer(
+              child: RepaintBoundary(
+                child: ClipRect(
+                  child: CustomPaint(
+                    size: size,
+                    painter: _CompositePainter(painters, repaint: _frame),
+                  ),
+                ),
+              ),
+            ),
+          if (widgetChildren.isNotEmpty)
+            RepaintBoundary(
+              child: Flow(
+                delegate: _ParticleFlowDelegate(
+                  particles: widgetParticles,
+                  repaint: _frame,
+                ),
+                children: widgetChildren,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Paints several built-in painters in order on the same canvas.
+class _CompositePainter extends CustomPainter {
+  _CompositePainter(this.painters, {required Listenable repaint})
+    : super(repaint: repaint);
+
+  final List<CustomPainter> painters;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final painter in painters) {
+      painter.paint(canvas, size);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CompositePainter oldDelegate) {
+    if (oldDelegate.painters.length != painters.length) return true;
+    for (int i = 0; i < painters.length; i++) {
+      final oldPainter = oldDelegate.painters[i];
+      if (oldPainter.runtimeType != painters[i].runtimeType ||
+          painters[i].shouldRepaint(oldPainter)) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 

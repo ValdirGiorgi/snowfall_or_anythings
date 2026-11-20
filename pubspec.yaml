@@ -1,11 +1,13 @@
 name: snowfall_or_anythings
-description: "A Flutter package to create snowfall or any kind of falling widgets animations."
+description: "Make snow, rain, hearts, leaves, Christmas items or any widget fall over your Flutter app. Mix up to 5 elements with custom percentages."
 version: 0.0.8
 homepage: https://github.com/ValdirGiorgi/snowfall_or_anythings
 repository: https://github.com/ValdirGiorgi/snowfall_or_anythings
 
 screenshots:
-  - description: The snowfall animation with default settings.
+  - description: Snowflakes, stars, Santa, Christmas trees and gifts falling together.
+    path: screenshots/christmas_mix.gif
+  - description: Snowfall or Anythings logo.
     path: assets/logos/snowfall_or_anythings.png
 
 environment:
@@ -23,7 +25,7 @@ dev_dependencies:
 
 topics:
   - snowfall
+  - particles
   - animation
-  - snow
-  - effects
   - christmas
+  - effects

@@ -8,16 +8,23 @@ class CustomPaintpage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('CustomPainter Demo'),
-      ),
-      body: SnowfallOrAnythings(
-        particleColor: Colors.green,
-        numberOfParticles: 150,
-        particleSize: 10.0,
-        particleSpeed: 2.0,
-        customPainter: ({required particles}) =>
-            CustomParticlePainter(particles),
+      appBar: AppBar(title: const Text('Custom painter')),
+      body: Container(
+        color: const Color(0xFF1A1A2E),
+        // The variants define how many particles of each kind exist and
+        // their colors; the painter decides how to draw each variantIndex.
+        child: SnowfallOrAnythings(
+          numberOfParticles: 160,
+          particleSize: 10,
+          particleSpeed: 2,
+          particleVariants: const [
+            ParticleVariant(color: Colors.redAccent, weight: 40),
+            ParticleVariant(color: Colors.amber, weight: 40),
+            ParticleVariant(color: Colors.cyanAccent, size: 4, weight: 20),
+          ],
+          customPainter:
+              ({required particles}) => ConfettiParticlePainter(particles),
+        ),
       ),
     );
   }

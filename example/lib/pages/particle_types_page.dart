@@ -85,22 +85,23 @@ class _ParticleTypesPageState extends State<ParticleTypesPage> {
                     spacing: 8,
                     runSpacing: 8,
                     alignment: WrapAlignment.center,
-                    children: ParticleType.values.map((type) {
-                      final isSelected = type == _selectedType;
-                      return ChoiceChip(
-                        label: Text(_typeNames[type]!),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() => _selectedType = type);
-                          }
-                        },
-                        selectedColor: Colors.blue,
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black,
-                        ),
-                      );
-                    }).toList(),
+                    children:
+                        ParticleType.values.map((type) {
+                          final isSelected = type == _selectedType;
+                          return ChoiceChip(
+                            label: Text(_typeNames[type]!),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() => _selectedType = type);
+                              }
+                            },
+                            selectedColor: Colors.blue,
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : Colors.black,
+                            ),
+                          );
+                        }).toList(),
                   ),
                   const SizedBox(height: 16),
                   // Size slider
@@ -136,33 +137,36 @@ class _ParticleTypesPageState extends State<ParticleTypesPage> {
                     spacing: 8,
                     runSpacing: 8,
                     alignment: WrapAlignment.center,
-                    children: _colors.map((color) {
-                      final isSelected = color == _selectedColor;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedColor = color),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isSelected ? Colors.white : Colors.grey,
-                              width: isSelected ? 3 : 1,
+                    children:
+                        _colors.map((color) {
+                          final isSelected = color == _selectedColor;
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedColor = color),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: color,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color:
+                                      isSelected ? Colors.white : Colors.grey,
+                                  width: isSelected ? 3 : 1,
+                                ),
+                                boxShadow:
+                                    isSelected
+                                        ? [
+                                          BoxShadow(
+                                            color: color.withValues(alpha: 0.5),
+                                            blurRadius: 8,
+                                            spreadRadius: 2,
+                                          ),
+                                        ]
+                                        : null,
+                              ),
                             ),
-                            boxShadow: isSelected
-                                ? [
-                                    BoxShadow(
-                                      color: color.withValues(alpha: 0.5),
-                                      blurRadius: 8,
-                                      spreadRadius: 2,
-                                    )
-                                  ]
-                                : null,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                          );
+                        }).toList(),
                   ),
                   const SizedBox(height: 16),
                 ],
