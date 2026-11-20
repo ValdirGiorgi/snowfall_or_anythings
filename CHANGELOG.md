@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.8
+
+### Added
+- `maxFps` parameter to cap the animation frame rate (`null` follows the display refresh rate)
+- `Particle.advance(width, height, delta)` for time-based movement (`update` still works and calls it with `delta = 1.0`)
+- Optional `repaint` parameter on all built-in painters, so they repaint without being recreated on every frame
+- Basic widget tests
+
+### Fixed
+- Falling speed no longer depends on the display refresh rate (120 Hz displays were twice as fast)
+- `frameRateMs` had no effect. It is now deprecated in favor of `maxFps`; values other than the default `16` are converted to a frame-rate cap for compatibility
+- Particles now wrap inside the widget area instead of the whole screen size
+- Changing parameters at runtime (`numberOfParticles`, `particleColor`, `particleSize`, `particleSpeed`) is now applied without needing a `Key`
+- Painter modes no longer block taps on widgets below the animation
+- Particles enter from above the top edge and leave fully through the bottom edge (no more popping), and wrap horizontally when drifting out of the sides
+- `shouldRepaint` in built-in painters compared the same mutable objects and never detected changes; repaints are now driven by the `repaint` listenable
+- Minimum Flutter version set to 3.29.0 (`Color.withValues` was already required)
+
+### Performance
+- Built-in painters repaint through a `Listenable` instead of rebuilding the widget tree on every frame
+- Widget particles are positioned with a `Flow` at paint time (no per-frame rebuild/relayout)
+- Wrapped in a `RepaintBoundary` to isolate repaints from the rest of the screen
+- Single shared `Random` instance and reused `Paint` objects in `LeafParticlePainter`
+
+### Deprecated
+- `SnowfallOrAnythings.frameRateMs`: use `maxFps`
+- `ParticlePainter`: use `CircularParticlePainter`
+
 ## 0.0.7
 
 ### Added

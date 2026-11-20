@@ -15,7 +15,9 @@ A Flutter package to create beautiful snowfall or other particle effects in your
 - 📱 Responsive design with proper screen adaptation
 - 🎯 Custom painter support for advanced effects
 - 🧩 Widget-based particles for maximum flexibility
-- ⏱️ Configurable frame rate for performance tuning
+- ⏱️ Time-based animation (same speed on 60 Hz and 120 Hz displays) with optional FPS cap
+- 👆 Doesn't block taps when used as an overlay (painter modes)
+- 🔄 Parameters can be changed at runtime, no `Key` needed
 
 ## Particle Types
 
@@ -23,9 +25,9 @@ A Flutter package to create beautiful snowfall or other particle effects in your
 |------|-------------|----------|
 | ⚪ `circular` | Simple filled circles | Rain, bubbles, generic effects |
 | ❄️ `snowflake` | 6-branched snowflake with details | Winter/snow themes |
-| ⭐ `star` | 5-pointed stars with rotation | Night sky, magical effects |
+| ⭐ `star` | 5-pointed stars with random orientation | Night sky, magical effects |
 | ❤️ `heart` | Heart shapes using Bézier curves | Valentine's, love themes |
-| 🍂 `leaf` | Realistic leaves with veins | Autumn, nature themes |
+| 🍂 `leaf` | Realistic leaves with veins and random tilt | Autumn, nature themes |
 | 💧 `raindrop` | Teardrop shapes | Rain, water effects |
 
 ## Installation
@@ -34,7 +36,7 @@ Add the following to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-    snowfall_or_anythings: ^0.0.7
+    snowfall_or_anythings: ^0.0.8
 ```
 
 Then run:
@@ -143,7 +145,8 @@ SnowfallOrAnythings(
 
 ### Performance Tuning
 
-Control the frame rate for performance optimization:
+By default the animation follows the display refresh rate. Use `maxFps` to cap
+it and save battery. The falling speed stays the same, only the smoothness changes:
 
 ```dart
 SnowfallOrAnythings(
@@ -151,14 +154,27 @@ SnowfallOrAnythings(
   particleSize: 4.0,
   particleSpeed: 1.0,
   particleType: ParticleType.snowflake,
-  frameRateMs: 33, // ~30 FPS for better battery life
+  maxFps: 30, // good for battery saving
 )
 ```
 
-**Frame rate guide:**
-- `8ms` = ~120 FPS (very smooth, higher CPU usage)
-- `16ms` = ~60 FPS (default, balanced)
-- `33ms` = ~30 FPS (good for battery saving)
+> `frameRateMs` is deprecated: it never limited the frame rate. Use `maxFps` instead.
+
+### Using as an overlay
+
+When rendering with built-in types or a `customPainter`, the widget ignores
+touches, so you can place it on top of your content:
+
+```dart
+Stack(
+  children: [
+    const MyPageContent(),
+    const Positioned.fill(
+      child: SnowfallOrAnythings(particleType: ParticleType.snowflake),
+    ),
+  ],
+)
+```
 
 ### Custom Painter Example
 
@@ -214,6 +230,8 @@ class CustomParticlePainter extends CustomPainter {
 }
 ```
 
+> Particles are drawn centered on `(particle.x, particle.y)` by the built-in painters.
+
 ### Widget-Based Particles
 
 Use any Flutter widget as particles:
@@ -229,6 +247,9 @@ SnowfallOrAnythings(
   ),
 )
 ```
+
+Each widget is placed with its top-left corner at the particle position and sized
+`particle.size × particle.size`. Widgets keep receiving touches in this mode.
 
 Or use images:
 
@@ -253,12 +274,13 @@ SnowfallOrAnythings(
 |-----------|------|---------|-------------|
 | `numberOfParticles` | `int` | `200` | Number of particles to display on screen |
 | `particleColor` | `Color` | `Colors.white` | Color of the particles (for built-in types) |
-| `particleSize` | `double` | `4.0` | Maximum size of particles in logical pixels |
-| `particleSpeed` | `double` | `1.0` | Maximum falling speed of particles |
+| `particleSize` | `double` | `4.0` | Base size: each particle gets a random size from `2` to `particleSize + 2` (radius for built-in shapes, width/height for `particleWidget`) |
+| `particleSpeed` | `double` | `1.0` | Falling speed: each particle gets a random speed from `1` to `particleSpeed + 1` px per frame at 60 FPS |
 | `particleType` | `ParticleType` | `ParticleType.snowflake` | Type of particle (see ParticleType enum) |
 | `customPainter` | `Function?` | `null` | Custom painter for advanced particle rendering |
 | `particleWidget` | `Widget?` | `null` | Custom widget to use as particle |
-| `frameRateMs` | `int` | `16` | Frame duration in milliseconds (16ms ≈ 60 FPS) |
+| `maxFps` | `double?` | `null` | Maximum animation updates per second (`null` = display refresh rate) |
+| `frameRateMs` | `int` | `16` | **Deprecated**, use `maxFps` |
 
 ### ParticleType
 
@@ -268,7 +290,7 @@ enum ParticleType {
   snowflake,  // Detailed snowflake shapes with branches
   star,       // 5-pointed star particles
   heart,      // Heart-shaped particles
-  leaf,       // Leaf particles with rotation
+  leaf,       // Leaf particles with random tilt
   raindrop,   // Teardrop/raindrop shapes
 }
 ```
@@ -280,9 +302,9 @@ enum ParticleType {
    numberOfParticles: MediaQuery.of(context).size.width > 600 ? 200 : 100
    ```
 
-2. **Adjust frame rate** for battery life:
+2. **Cap the frame rate** for battery life:
    ```dart
-   frameRateMs: 33  // 30 FPS instead of 60 FPS
+   maxFps: 30
    ```
 
 3. **Use simpler particle types**:
@@ -301,20 +323,21 @@ SnowfallOrAnythings(
   numberOfParticles: 300,
   particleSize: 2.0,
   particleSpeed: 3.0,
-  particleColor: Colors.blue.withOpacity(0.6),
+  particleColor: Colors.blue.withValues(alpha: 0.6),
   particleType: ParticleType.circular,
 )
 ```
 
 ### Slow Motion Confetti
 
+Use your own painter (see [Custom Painter Example](#custom-painter-example)) with a low speed:
+
 ```dart
 SnowfallOrAnythings(
   numberOfParticles: 100,
   particleSize: 8.0,
   particleSpeed: 0.5,
-  customPainter: ({required particles}) => ConfettiPainter(particles),
-  frameRateMs: 16,
+  customPainter: ({required particles}) => CustomParticlePainter(particles),
 )
 ```
 

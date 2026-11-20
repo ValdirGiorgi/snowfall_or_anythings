@@ -24,6 +24,9 @@ class Particle {
   /// Color of the particle
   final Color color;
 
+  /// Shared random generator, avoids allocating a new [Random] per particle.
+  static final Random _random = Random();
+
   Particle({
     required this.x,
     required this.y,
@@ -48,7 +51,7 @@ class Particle {
     double width = 0,
     double height = 0,
   }) {
-    final random = Random();
+    final random = _random;
     return Particle(
       x: random.nextDouble() * (width > 0 ? width : 1000),
       y: random.nextDouble() * (height > 0 ? height : 1000),
@@ -61,18 +64,33 @@ class Particle {
 
   /// Updates the particle's position for the next frame.
   ///
-  /// Moves the particle down by [speed] and horizontally by [sway].
-  /// When the particle falls below the bottom ([height]), it wraps around
-  /// to the top with a new random horizontal position.
-  void update(double width, double height) {
-    y += speed;
-    x += sway;
-    if (y > height) {
-      y = 0;
-      x = Random().nextDouble() * width;
+  /// Same as calling [advance] with a `delta` of `1.0` (one frame at 60 FPS).
+  void update(double width, double height) => advance(width, height, 1.0);
+
+  /// Moves the particle by [delta] frames, where `1.0` is one frame at 60 FPS.
+  ///
+  /// Moves the particle down by `speed * delta` and horizontally by
+  /// `sway * delta`. When the particle leaves the bottom of the area
+  /// ([height]), it re-enters from just above the top with a new random
+  /// horizontal position. Particles drifting out of the sides wrap around
+  /// to the opposite side.
+  void advance(double width, double height, double delta) {
+    y += speed * delta;
+    x += sway * delta;
+    if (y - size > height) {
+      y = -size;
+      x = _random.nextDouble() * width;
+    } else if (width > 0) {
+      if (x < -size) {
+        x += width + size * 2;
+      } else if (x > width + size) {
+        x -= width + size * 2;
+      }
     }
   }
 
+  /// Equality is based on the current (mutable) state of the particle.
+  /// Avoid using particles as keys in sets or maps.
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -92,7 +110,11 @@ class Particle {
 class CircularParticlePainter extends CustomPainter {
   final List<Particle> particles;
 
-  CircularParticlePainter({required this.particles});
+  /// Creates the painter.
+  ///
+  /// Pass [repaint] to repaint whenever that [Listenable] notifies, without
+  /// creating a new painter on every frame.
+  CircularParticlePainter({required this.particles, super.repaint});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -105,26 +127,34 @@ class CircularParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CircularParticlePainter oldDelegate) {
-    if (oldDelegate.particles.length != particles.length) return true;
-    for (int i = 0; i < particles.length; i++) {
-      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
-        return true;
-      }
-    }
-    return false;
+    // Particles are mutated in place; movement repaints come from [repaint].
+    return !identical(oldDelegate.particles, particles);
   }
 }
 
 /// Custom painter to draw particles as circles (alias for [CircularParticlePainter]).
+@Deprecated(
+  'Use CircularParticlePainter instead. '
+  'This alias will be removed in a future major version.',
+)
 class ParticlePainter extends CircularParticlePainter {
-  ParticlePainter({required super.particles});
+  /// Creates the painter.
+  @Deprecated(
+    'Use CircularParticlePainter instead. '
+    'This alias will be removed in a future major version.',
+  )
+  ParticlePainter({required super.particles, super.repaint});
 }
 
 /// Custom painter to draw snowflake particles
 class SnowflakeParticlePainter extends CustomPainter {
   final List<Particle> snowflakes;
 
-  SnowflakeParticlePainter({required this.snowflakes});
+  /// Creates the painter.
+  ///
+  /// Pass [repaint] to repaint whenever that [Listenable] notifies, without
+  /// creating a new painter on every frame.
+  SnowflakeParticlePainter({required this.snowflakes, super.repaint});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -176,13 +206,8 @@ class SnowflakeParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant SnowflakeParticlePainter oldDelegate) {
-    if (oldDelegate.snowflakes.length != snowflakes.length) return true;
-    for (int i = 0; i < snowflakes.length; i++) {
-      if (oldDelegate.snowflakes[i].hashCode != snowflakes[i].hashCode) {
-        return true;
-      }
-    }
-    return false;
+    // Particles are mutated in place; movement repaints come from [repaint].
+    return !identical(oldDelegate.snowflakes, snowflakes);
   }
 }
 
@@ -190,7 +215,11 @@ class SnowflakeParticlePainter extends CustomPainter {
 class StarParticlePainter extends CustomPainter {
   final List<Particle> particles;
 
-  StarParticlePainter({required this.particles});
+  /// Creates the painter.
+  ///
+  /// Pass [repaint] to repaint whenever that [Listenable] notifies, without
+  /// creating a new painter on every frame.
+  StarParticlePainter({required this.particles, super.repaint});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -234,13 +263,8 @@ class StarParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant StarParticlePainter oldDelegate) {
-    if (oldDelegate.particles.length != particles.length) return true;
-    for (int i = 0; i < particles.length; i++) {
-      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
-        return true;
-      }
-    }
-    return false;
+    // Particles are mutated in place; movement repaints come from [repaint].
+    return !identical(oldDelegate.particles, particles);
   }
 }
 
@@ -248,7 +272,11 @@ class StarParticlePainter extends CustomPainter {
 class HeartParticlePainter extends CustomPainter {
   final List<Particle> particles;
 
-  HeartParticlePainter({required this.particles});
+  /// Creates the painter.
+  ///
+  /// Pass [repaint] to repaint whenever that [Listenable] notifies, without
+  /// creating a new painter on every frame.
+  HeartParticlePainter({required this.particles, super.repaint});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -293,13 +321,8 @@ class HeartParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant HeartParticlePainter oldDelegate) {
-    if (oldDelegate.particles.length != particles.length) return true;
-    for (int i = 0; i < particles.length; i++) {
-      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
-        return true;
-      }
-    }
-    return false;
+    // Particles are mutated in place; movement repaints come from [repaint].
+    return !identical(oldDelegate.particles, particles);
   }
 }
 
@@ -307,19 +330,37 @@ class HeartParticlePainter extends CustomPainter {
 class LeafParticlePainter extends CustomPainter {
   final List<Particle> particles;
 
-  LeafParticlePainter({required this.particles});
+  /// Creates the painter.
+  ///
+  /// Pass [repaint] to repaint whenever that [Listenable] notifies, without
+  /// creating a new painter on every frame.
+  LeafParticlePainter({required this.particles, super.repaint});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
+    final veinPaint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
+    final sideVeinPaint =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeCap = StrokeCap.round;
 
     for (var particle in particles) {
       paint.color = particle.color;
-      _renderLeaf(canvas, particle, paint);
+      _renderLeaf(canvas, particle, paint, veinPaint, sideVeinPaint);
     }
   }
 
-  void _renderLeaf(Canvas canvas, Particle particle, Paint paint) {
+  void _renderLeaf(
+    Canvas canvas,
+    Particle particle,
+    Paint paint,
+    Paint veinPaint,
+    Paint sideVeinPaint,
+  ) {
     final center = Offset(particle.x, particle.y);
     final size = particle.size;
 
@@ -372,21 +413,15 @@ class LeafParticlePainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     // Draw central vein
-    final veinPaint =
-        Paint()
-          ..color = particle.color.withValues(alpha: 0.4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = size * 0.08
-          ..strokeCap = StrokeCap.round;
+    veinPaint
+      ..color = particle.color.withValues(alpha: 0.4)
+      ..strokeWidth = size * 0.08;
     canvas.drawLine(Offset(0, -size * 0.8), Offset(0, size * 0.7), veinPaint);
 
     // Draw side veins
-    final sideVeinPaint =
-        Paint()
-          ..color = particle.color.withValues(alpha: 0.3)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = size * 0.05
-          ..strokeCap = StrokeCap.round;
+    sideVeinPaint
+      ..color = particle.color.withValues(alpha: 0.3)
+      ..strokeWidth = size * 0.05;
 
     // Right side veins
     canvas.drawLine(
@@ -417,13 +452,8 @@ class LeafParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant LeafParticlePainter oldDelegate) {
-    if (oldDelegate.particles.length != particles.length) return true;
-    for (int i = 0; i < particles.length; i++) {
-      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
-        return true;
-      }
-    }
-    return false;
+    // Particles are mutated in place; movement repaints come from [repaint].
+    return !identical(oldDelegate.particles, particles);
   }
 }
 
@@ -431,7 +461,11 @@ class LeafParticlePainter extends CustomPainter {
 class RaindropParticlePainter extends CustomPainter {
   final List<Particle> particles;
 
-  RaindropParticlePainter({required this.particles});
+  /// Creates the painter.
+  ///
+  /// Pass [repaint] to repaint whenever that [Listenable] notifies, without
+  /// creating a new painter on every frame.
+  RaindropParticlePainter({required this.particles, super.repaint});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -468,12 +502,7 @@ class RaindropParticlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant RaindropParticlePainter oldDelegate) {
-    if (oldDelegate.particles.length != particles.length) return true;
-    for (int i = 0; i < particles.length; i++) {
-      if (oldDelegate.particles[i].hashCode != particles[i].hashCode) {
-        return true;
-      }
-    }
-    return false;
+    // Particles are mutated in place; movement repaints come from [repaint].
+    return !identical(oldDelegate.particles, particles);
   }
 }

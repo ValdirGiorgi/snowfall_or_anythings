@@ -1,4 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+
 import 'particle.dart';
 
 /// Types of particles available for rendering
@@ -15,7 +19,7 @@ enum ParticleType {
   /// Heart-shaped particles
   heart,
 
-  /// Leaf-shaped particles that rotate
+  /// Leaf-shaped particles with a random tilt
   leaf,
 
   /// Raindrop/teardrop-shaped particles
@@ -25,9 +29,17 @@ enum ParticleType {
 /// A widget that creates a snowfall or any kind of falling particle animation.
 ///
 /// This widget can display falling particles using different rendering modes:
-/// - Built-in particle types ([ParticleType.circular] or [ParticleType.snowflake])
+/// - Built-in particle types (see [ParticleType])
 /// - Custom painter for advanced rendering
 /// - Custom widgets as particles
+///
+/// Particles move based on elapsed time, so the falling speed is the same on
+/// 60 Hz and 120 Hz displays. Changing any parameter at runtime is applied
+/// automatically, no `Key` is needed.
+///
+/// When rendering with a painter (built-in types or [customPainter]) the
+/// widget ignores pointer events, so it can be placed over other widgets in a
+/// [Stack] without blocking taps.
 ///
 /// Example:
 /// ```dart
@@ -45,10 +57,16 @@ class SnowfallOrAnythings extends StatefulWidget {
   /// Color of the particles (used with built-in particle types)
   final Color particleColor;
 
-  /// Maximum size of particles in logical pixels
+  /// Base size of particles in logical pixels.
+  ///
+  /// Each particle gets a random size between `2` and `particleSize + 2`.
+  /// For built-in particle types this is the radius of the shape; for
+  /// [particleWidget] it is the width and height of the widget.
   final double particleSize;
 
-  /// Maximum falling speed of particles
+  /// Maximum falling speed of particles, in logical pixels per frame at 60 FPS.
+  ///
+  /// Each particle gets a random speed between `1` and `particleSpeed + 1`.
   final double particleSpeed;
 
   /// Type of particle to render (circular, snowflake, star, heart, leaf, or raindrop)
@@ -61,10 +79,23 @@ class SnowfallOrAnythings extends StatefulWidget {
   /// Optional widget to use as particle (instead of painting)
   final Widget? particleWidget;
 
-  /// Frame rate of the animation in milliseconds per frame.
-  /// Default is 16ms (~60 FPS). Lower values = higher FPS, higher values = lower FPS.
-  /// For example: 33ms = ~30 FPS, 16ms = ~60 FPS, 8ms = ~120 FPS
+  /// Frame duration in milliseconds.
+  ///
+  /// This parameter never limited the frame rate in previous versions. For
+  /// compatibility, a value different from the default `16` is now converted
+  /// to a frame-rate cap (`1000 / frameRateMs`) when [maxFps] is not set.
+  @Deprecated(
+    'frameRateMs never limited the frame rate. Use maxFps instead. '
+    'This parameter will be removed in a future major version.',
+  )
   final int frameRateMs;
+
+  /// Maximum number of animation updates per second.
+  ///
+  /// When `null` (default) the animation follows the display refresh rate.
+  /// Use lower values (e.g. `30`) to save battery. The falling speed is not
+  /// affected, only the smoothness.
+  final double? maxFps;
 
   const SnowfallOrAnythings({
     super.key,
@@ -75,7 +106,12 @@ class SnowfallOrAnythings extends StatefulWidget {
     this.particleType = ParticleType.snowflake,
     this.customPainter,
     this.particleWidget,
+    @Deprecated(
+      'frameRateMs never limited the frame rate. Use maxFps instead. '
+      'This parameter will be removed in a future major version.',
+    )
     this.frameRateMs = 16,
+    this.maxFps,
   });
 
   @override
@@ -84,118 +120,258 @@ class SnowfallOrAnythings extends StatefulWidget {
 
 class _SnowfallOrAnythingsState extends State<SnowfallOrAnythings>
     with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+  /// Duration of one frame at 60 FPS, the unit used by [Particle.speed].
+  static const double _microsPerReferenceFrame = 1000000 / 60;
+
+  /// Upper bound for a single step, avoids big jumps after the app was paused.
+  static const double _maxDelta = 6;
+
+  late final Ticker _ticker;
+  final _FrameNotifier _frame = _FrameNotifier();
   List<Particle>? _particles;
+  Size _areaSize = Size.zero;
+  Duration _lastStep = Duration.zero;
 
   @override
   void initState() {
     super.initState();
-
-    // Initialize the animation controller with custom frame rate
-    _controller = AnimationController(
-      vsync: this,
-      duration: Duration(milliseconds: widget.frameRateMs),
-    )..addListener(() {
-      if (_particles != null) {
-        setState(() {
-          // Update the position of particles
-          final size = MediaQuery.of(context).size;
-          for (final particle in _particles!) {
-            particle.update(size.width, size.height);
-          }
-        });
-      }
-    });
-
-    // Start the animation
-    _controller.repeat();
+    _ticker = createTicker(_onTick)..start();
   }
 
-  void _initializeParticles(double width, double height) {
-    // Generate particles with correct dimensions
-    _particles = List.generate(
+  @override
+  void didUpdateWidget(covariant SnowfallOrAnythings oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.numberOfParticles != widget.numberOfParticles ||
+        oldWidget.particleColor != widget.particleColor ||
+        oldWidget.particleSize != widget.particleSize ||
+        oldWidget.particleSpeed != widget.particleSpeed) {
+      // Regenerated in the next build with the current area size.
+      _particles = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _frame.dispose();
+    super.dispose();
+  }
+
+  double? get _effectiveMaxFps {
+    final maxFps = widget.maxFps;
+    if (maxFps != null) return maxFps > 0 ? maxFps : null;
+    // ignore: deprecated_member_use_from_same_package
+    final frameRateMs = widget.frameRateMs;
+    return frameRateMs != 16 && frameRateMs > 0 ? 1000 / frameRateMs : null;
+  }
+
+  void _onTick(Duration elapsed) {
+    final particles = _particles;
+    if (particles == null || _areaSize.isEmpty) {
+      _lastStep = elapsed;
+      return;
+    }
+
+    final elapsedMicros = (elapsed - _lastStep).inMicroseconds;
+    final maxFps = _effectiveMaxFps;
+    if (maxFps != null) {
+      // 10% tolerance absorbs vsync jitter (e.g. 16ms frames at a 60 FPS cap).
+      final minIntervalMicros = 1000000 / maxFps * 0.9;
+      if (elapsedMicros < minIntervalMicros) return;
+    }
+    _lastStep = elapsed;
+
+    final delta = math.min(elapsedMicros / _microsPerReferenceFrame, _maxDelta);
+    if (delta <= 0) return;
+
+    final width = _areaSize.width;
+    final height = _areaSize.height;
+    for (final particle in particles) {
+      particle.advance(width, height, delta);
+    }
+    _frame.notify();
+  }
+
+  List<Particle> _createParticles(Size size) {
+    return List.generate(
       widget.numberOfParticles,
       (_) => Particle.random(
         color: widget.particleColor,
         size: widget.particleSize,
         speed: widget.particleSpeed,
-        width: width,
-        height: height,
+        width: size.width,
+        height: size.height,
       ),
     );
   }
 
-  @override
-  void dispose() {
-    // Dispose the animation controller
-    _controller.dispose();
-    super.dispose();
+  /// Keeps particles proportionally placed when the available area changes
+  /// (e.g. device rotation or window resize).
+  void _updateAreaSize(Size size) {
+    final particles = _particles;
+    if (particles != null &&
+        !_areaSize.isEmpty &&
+        !size.isEmpty &&
+        size != _areaSize) {
+      final scaleX = size.width / _areaSize.width;
+      final scaleY = size.height / _areaSize.height;
+      for (final particle in particles) {
+        particle
+          ..x *= scaleX
+          ..y *= scaleY;
+      }
+    }
+    _areaSize = size;
+  }
+
+  CustomPainter _builtInPainter(List<Particle> particles) {
+    return switch (widget.particleType) {
+      ParticleType.circular => CircularParticlePainter(
+        particles: particles,
+        repaint: _frame,
+      ),
+      ParticleType.snowflake => SnowflakeParticlePainter(
+        snowflakes: particles,
+        repaint: _frame,
+      ),
+      ParticleType.star => StarParticlePainter(
+        particles: particles,
+        repaint: _frame,
+      ),
+      ParticleType.heart => HeartParticlePainter(
+        particles: particles,
+        repaint: _frame,
+      ),
+      ParticleType.leaf => LeafParticlePainter(
+        particles: particles,
+        repaint: _frame,
+      ),
+      ParticleType.raindrop => RaindropParticlePainter(
+        particles: particles,
+        repaint: _frame,
+      ),
+    };
   }
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Initialize particles with correct dimensions on first build
-        if (_particles == null) {
-          _initializeParticles(
-            constraints.maxWidth.isFinite
-                ? constraints.maxWidth
-                : MediaQuery.of(context).size.width,
-            constraints.maxHeight.isFinite
-                ? constraints.maxHeight
-                : MediaQuery.of(context).size.height,
-          );
-        }
+        final screenSize = MediaQuery.sizeOf(context);
+        final size = Size(
+          constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : screenSize.width,
+          constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : screenSize.height,
+        );
+        _updateAreaSize(size);
+        final particles = _particles ??= _createParticles(size);
 
-        // Wait for particles to be initialized
-        if (_particles == null || _particles!.isEmpty) {
+        if (particles.isEmpty) {
           return const SizedBox.shrink();
         }
 
-        // If the user provided a widget for particles, use a Stack to position them
-        if (widget.particleWidget != null) {
-          return Stack(
-            children:
-                _particles!.map((particle) {
-                  return Positioned(
-                    left: particle.x,
-                    top: particle.y,
-                    child: SizedBox(
-                      width: particle.size,
-                      height: particle.size,
-                      child: widget.particleWidget,
-                    ),
-                  );
-                }).toList(),
+        // Widget particles: positioned at paint time with a Flow, so no
+        // rebuild or relayout happens on each frame.
+        final particleWidget = widget.particleWidget;
+        if (particleWidget != null) {
+          return RepaintBoundary(
+            child: SizedBox.fromSize(
+              size: size,
+              child: Flow(
+                delegate: _ParticleFlowDelegate(
+                  particles: particles,
+                  repaint: _frame,
+                ),
+                children: [for (final _ in particles) particleWidget],
+              ),
+            ),
           );
         }
 
-        // Otherwise, render with CustomPainter
-        final defaultPainter = switch (widget.particleType) {
-          ParticleType.circular => CircularParticlePainter(
-            particles: _particles!,
-          ),
-          ParticleType.snowflake => SnowflakeParticlePainter(
-            snowflakes: _particles!,
-          ),
-          ParticleType.star => StarParticlePainter(particles: _particles!),
-          ParticleType.heart => HeartParticlePainter(particles: _particles!),
-          ParticleType.leaf => LeafParticlePainter(particles: _particles!),
-          ParticleType.raindrop => RaindropParticlePainter(
-            particles: _particles!,
-          ),
-        };
+        final customPainter = widget.customPainter;
+        final Widget painted;
+        if (customPainter != null) {
+          // The callback is invoked on every frame, as in previous versions.
+          painted = ListenableBuilder(
+            listenable: _frame,
+            builder:
+                (context, _) => CustomPaint(
+                  size: size,
+                  painter: _CustomPainterHost(
+                    customPainter(particles: particles),
+                    repaint: _frame,
+                  ),
+                ),
+          );
+        } else {
+          painted = CustomPaint(
+            size: size,
+            painter: _builtInPainter(particles),
+          );
+        }
 
-        return CustomPaint(
-          size: Size.infinite,
-          // Use customPainter if provided, otherwise use defaultPainter
-          painter:
-              widget.customPainter != null
-                  ? widget.customPainter!(particles: _particles!)
-                  : defaultPainter,
-        );
+        return IgnorePointer(child: RepaintBoundary(child: painted));
       },
     );
+  }
+}
+
+/// Notifies listeners once per animation step.
+class _FrameNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
+/// Wraps a user provided painter so it is repainted on every animation step,
+/// regardless of its own `shouldRepaint` implementation.
+class _CustomPainterHost extends CustomPainter {
+  _CustomPainterHost(this.delegate, {required Listenable repaint})
+    : super(repaint: repaint);
+
+  final CustomPainter delegate;
+
+  @override
+  void paint(Canvas canvas, Size size) => delegate.paint(canvas, size);
+
+  @override
+  bool shouldRepaint(covariant _CustomPainterHost oldDelegate) {
+    return oldDelegate.delegate.runtimeType != delegate.runtimeType ||
+        delegate.shouldRepaint(oldDelegate.delegate);
+  }
+}
+
+/// Paints each particle widget at its particle position.
+class _ParticleFlowDelegate extends FlowDelegate {
+  _ParticleFlowDelegate({required this.particles, required super.repaint});
+
+  final List<Particle> particles;
+
+  @override
+  BoxConstraints getConstraintsForChild(int i, BoxConstraints constraints) {
+    return BoxConstraints.tight(Size.square(particles[i].size));
+  }
+
+  @override
+  void paintChildren(FlowPaintingContext context) {
+    final count = math.min(context.childCount, particles.length);
+    for (int i = 0; i < count; i++) {
+      final particle = particles[i];
+      context.paintChild(
+        i,
+        transform: Matrix4.translationValues(particle.x, particle.y, 0),
+      );
+    }
+  }
+
+  @override
+  bool shouldRelayout(covariant _ParticleFlowDelegate oldDelegate) {
+    return !identical(oldDelegate.particles, particles);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ParticleFlowDelegate oldDelegate) {
+    return !identical(oldDelegate.particles, particles);
   }
 }

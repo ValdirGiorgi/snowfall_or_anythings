@@ -46,7 +46,6 @@ class _ParticleTypesPageState extends State<ParticleTypesPage> {
         children: [
           // Particle animation
           SnowfallOrAnythings(
-            key: ValueKey('${_selectedType}_${_selectedColor}_$_particleSize'),
             numberOfParticles: 150,
             particleSize: _particleSize,
             particleSpeed: 1.5,

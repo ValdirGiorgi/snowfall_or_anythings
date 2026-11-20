@@ -105,7 +105,7 @@ class _FrameRatePageState extends State<FrameRatePage> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'frameRateMs: ${_frameRateMs.round()}ms',
+                  'maxFps: $_currentFPS',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.white70,
@@ -128,12 +128,11 @@ class _FrameRatePageState extends State<FrameRatePage> {
           // Animation Area
           Expanded(
             child: SnowfallOrAnythings(
-              key: ValueKey(_frameRateMs.round()),
               numberOfParticles: 150,
               particleSize: 4.0,
               particleSpeed: 1.0,
               particleType: ParticleType.snowflake,
-              frameRateMs: _frameRateMs.round(),
+              maxFps: _currentFPS.toDouble(),
             ),
           ),
         ],
