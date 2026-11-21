@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'particle.dart';
@@ -117,7 +117,7 @@ class SnowfallOrAnythings extends StatefulWidget {
   const SnowfallOrAnythings({
     super.key,
     this.numberOfParticles = 200,
-    this.particleColor = Colors.white,
+    this.particleColor = const Color(0xFFFFFFFF), // Colors.white
     this.particleSize = 4.0,
     this.particleSpeed = 1.0,
     this.particleType = ParticleType.snowflake,

@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import 'particle_variant.dart' show ParticleVariant;
 

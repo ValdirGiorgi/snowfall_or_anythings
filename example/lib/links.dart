@@ -3,7 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// All external links of the demo app in one place.
 abstract final class Links {
-  static const packageVersion = '0.0.8';
+  static const packageVersion = '0.0.9';
   static const author = 'Valdir Giorgi';
 
   static const liveDemo = 'https://snowfall.valdir.dev.br';

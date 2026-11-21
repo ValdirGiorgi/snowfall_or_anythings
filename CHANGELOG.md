@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.0.9
+
+### Fixed
+- The library no longer imports `package:flutter/material.dart`, which is deprecated in newer Flutter versions (Material is moving to its own package). It now only depends on `package:flutter/widgets.dart`. This restores the full static analysis score on pub.dev
+- The default `particleColor` is now written as `Color(0xFFFFFFFF)`, the same value as `Colors.white` (no behavior change)
+- The logo is the main image on the pub.dev page again (it is now the first screenshot)
+
 ## 0.0.8
 
 ### Added

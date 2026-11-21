@@ -49,7 +49,7 @@ Or add it to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  snowfall_or_anythings: ^0.0.8
+  snowfall_or_anythings: ^0.0.9
 ```
 
 ## Quick start
